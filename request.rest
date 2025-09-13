@@ -1,0 +1,98 @@
+### BASE URL & VARS
+@base = http://localhost:5000
+@admin_username = admin
+@admin_password = admin123
+
+# Jika kamu punya teacher untuk uji:
+@teacher_username = guru1
+@teacher_password = password123
+
+########################################################
+# AUTH: LOGIN (ADMIN)
+########################################################
+# @name login_admin
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{admin_username}}",
+  "password": "{{admin_password}}"
+}
+
+### CEK SIAPA YANG LAGI LOGIN (ADMIN)
+GET {{base}}/auth/me
+
+### LOGOUT (ADMIN)
+# gunakan jika ingin reset sesi
+POST {{base}}/auth/logout
+
+########################################################
+# USERS: LIST (ADMIN ONLY)
+########################################################
+# @name list_users
+GET http://localhost:5000/users
+
+### CREATE USER (ADMIN ONLY)
+# @name create_user
+POST http://localhost:5000/users
+Content-Type: application/json
+
+{
+  "full_name": "Jaya",
+  "nip": "221011400213",
+  "username": "guru1",
+  "phone": "081234567894",
+  "password": "password123",
+  "confPassword": "password123",
+  "role_id": 2,
+  "status": "active"
+}
+
+### Ambil Semua User
+GET http://localhost:5000/users
+
+### AMBIL ID USER DARI RESPONSE SEBELUMNYA
+@newUserId = 10
+
+### GET USER BY ID (ADMIN ONLY)
+GET http://localhost:5000/users/{{newUserId}}
+
+### UPDATE USER (ADMIN ONLY)
+PUT http://localhost:5000/users/{{newUserId}}
+Content-Type: application/json
+
+{
+  "full_name": "Guru Satu (Update)",
+  "username": "guru1",
+  "nip": "",
+  "phone": "081200000001",
+  "password": "",
+  "confPassword": "",
+  "role_id": 2,
+  "status": "active"
+}
+
+### DELETE USER (ADMIN ONLY)
+DELETE http://localhost:5000/users/{{newUserId}}
+
+########################################################
+# UJI ROLE TEACHER (READ-ONLY)
+########################################################
+### LOGIN TEACHER
+# @name login_teacher
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{teacher_username}}",
+  "password": "{{teacher_password}}"
+}
+
+### CEK SIAPA YANG LAGI LOGIN (TEACHER)
+GET {{base}}/auth/me
+
+### COBA AKSES ADMIN ROUTE (HARUS 403)
+GET {{base}}/users
+
+### (OPSIONAL) LIHAT JADWAL SAYA – JIKA ENDPOINT ADA
+GET {{base}}/me/timetables?semester_id=1
