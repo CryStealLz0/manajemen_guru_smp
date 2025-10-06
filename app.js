@@ -1,88 +1,68 @@
 import express from 'express';
-import cors from 'cors';
 import session from 'express-session';
-import dotenv from 'dotenv';
+import SequelizeStoreInit from 'connect-session-sequelize';
 import db from './config/Database.js';
-import connectSessionSequelize from 'connect-session-sequelize';
-import AuthRoute from './routes/AuthRoute.js';
-import UserRoute from './routes/UserRoute.js';
-import { requireAuth, requireRole } from './middleware/Auth.js';
-// import './models/index.js';
-
-dotenv.config();
+import cors from 'cors';
 
 const app = express();
 
-// (opsional) kalau di belakang reverse proxy / https
-// app.set('trust proxy', 1);
+const ALLOWLIST = ['http://localhost:5173', 'http://localhost:3000'];
 
-const SequelizeStore = connectSessionSequelize(session.Store);
-const store = new SequelizeStore({ db });
-
-app.use(express.json());
-
+// ✅ CORS: gunakan fungsi origin supaya gampang nambah host dev
 app.use(
     cors({
-        credentials: true, // <- perbaiki dari "credential"
-        origin: 'http://localhost:3000',
+        origin(origin, cb) {
+            // Postman / curl / server-to-server tak punya Origin → izinkan
+            if (!origin) return cb(null, true);
+            return cb(null, ALLOWLIST.includes(origin));
+        },
+        credentials: true,
     }),
 );
 
+app.use(express.json());
+
+// ✅ PROD di balik proxy/HTTPS → aktifkan ini (biar secure cookie kebaca)
+// app.set('trust proxy', 1);
+
+const SequelizeStore = SequelizeStoreInit(session.Store);
+const store = new SequelizeStore({
+    db,
+    tableName: 'sessions',
+    // ✅ bersih-bersih session kadaluarsa otomatis
+    checkExpirationInterval: 15 * 60 * 1000, // setiap 15 menit
+    expiration: 7 * 24 * 60 * 60 * 1000, // TTL session = 7 hari
+});
+
+// ✅ pastikan tabel "sessions" dibuat (kalau belum). Lakukan sekali saat boot.
+store.sync(); // kalau kamu pakai top-level await, boleh: await store.sync()
+
 app.use(
     session({
-        secret: process.env.SESS_SECRET || 'dev-secret',
+        secret: process.env.SESSION_SECRET || 'dev-secret-please-change',
+        store,
+        name: 'sid', // ✅ samakan dengan clearCookie di logout
         resave: false,
         saveUninitialized: false,
-        store,
+        rolling: true, // ✅ refresh maxAge pada tiap response (opsional, enak saat dev)
         cookie: {
-            secure: 'auto', // true jika https, auto cukup untuk lokal
-            sameSite: 'lax',
-            // maxAge: 24 * 60 * 60 * 1000, // 1 hari (opsional)
+            httpOnly: true,
+            secure: false, // ✅ set true di PROD (HTTPS) + app.set('trust proxy', 1)
+            sameSite: 'lax', // ✅ cocok untuk localhost:5173/3000 (masih 1 site: http+localhost)
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            // domain: '.yourdomain.com', // ❗️JANGAN di-set untuk localhost
         },
     }),
 );
 
-app.use('/auth', AuthRoute);
+import authRoutes from './routes/AuthRoute.js';
+import userRoutes from './routes/UserRoute.js';
+import roleRoutes from './routes/RoleRoute.js';
+import academicYearRoutes from './routes/AcademicYear.js';
 
-// route users (CRUD user, admin only)
-app.use('/users', UserRoute);
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/roles', roleRoutes);
+app.use('/academic-years', academicYearRoutes);
 
-// contoh proteksi endpoint admin-only
-app.get('/admin/ping', requireAuth, requireRole('admin'), (_req, res) => {
-    res.json({ ok: true });
-});
-
-// contoh proteksi guru-only
-app.get('/teacher/ping', requireAuth, requireRole('teacher'), (_req, res) => {
-    res.json({ ok: true });
-});
-
-// Bootstrapping DB & start server
-// (async () => {
-//     try {
-//         await db.authenticate();
-//         console.log('DB connected.');
-
-//         // Sinkronkan semua model aplikasi
-//         await db.sync({ alter: true });
-//         console.log('Models synced.');
-
-//         // Buat tabel Sessions untuk session-store
-//         await store.sync();
-//         console.log('Session store synced.');
-
-//         const port = Number(process.env.APP_PORT || 4000);
-//         app.listen(port, () => {
-//             console.log(`Server running on http://localhost:${port}`);
-//         });
-//     } catch (e) {
-//         console.error('Boot error:', e);
-//         // Jangan close db kalau gagal; biar pesan error terlihat
-//         process.exit(1);
-//     }
-// })();
-
-const port = Number(process.env.APP_PORT || 4000);
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
-});
+export { app, db, store };

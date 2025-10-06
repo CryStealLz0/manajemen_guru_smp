@@ -1,11 +1,46 @@
+import sequelize from '../config/Database.js';
 import User from '../models/User.js';
 import Role from '../models/Role.js';
 import argon2 from 'argon2';
+import { ok, bad, vErr } from '../helpers/http.js';
+import {
+    validateCreatePayload,
+    validateUpdatePayload,
+} from '../validators/userValidator.js';
 
-// GET semua user
+// GET /users
 export const getUsers = async (req, res) => {
     try {
-        const response = await User.findAll({
+        const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+        const limit = Math.min(
+            Math.max(parseInt(req.query.limit || '10', 10), 1),
+            100,
+        );
+        const offset = (page - 1) * limit;
+
+        const q = (req.query.q ?? '').trim() || null;
+        const status = (req.query.status ?? '').trim() || null;
+        const role_id = req.query.role_id ? Number(req.query.role_id) : null;
+
+        const { Op } = await import('sequelize');
+        const where = {};
+        if (q) {
+            // Gunakan operator yang cocok dengan dialect DB-mu:
+            // - Postgres: Op.iLike
+            // - MySQL/SQLite: Op.substring (LIKE %...%)
+            const likeOp = Op.iLike ?? Op.substring;
+            where[Op.or] = [
+                { full_name: { [likeOp]: `%${q}%` } },
+                { username: { [likeOp]: `%${q}%` } },
+                { phone: { [likeOp]: `%${q}%` } },
+                { nip: { [likeOp]: `%${q}%` } },
+            ];
+        }
+        if (status) where.status = status;
+        if (role_id) where.role_id = role_id;
+
+        const { rows, count } = await User.findAndCountAll({
+            where,
             attributes: [
                 'id',
                 'full_name',
@@ -13,22 +48,33 @@ export const getUsers = async (req, res) => {
                 'nip',
                 'phone',
                 'status',
+                'role_id',
+                'createdAt',
+                'updatedAt',
             ],
-            include: {
-                model: Role,
-                attributes: ['name'], // tampilkan nama role
+            include: { model: Role, attributes: ['id', 'name'] },
+            order: [['id', 'ASC']],
+            limit,
+            offset,
+        });
+
+        return ok(res, rows, 'Users fetched', 200, {
+            meta: {
+                page,
+                limit,
+                total: count,
+                pages: Math.ceil(count / limit),
             },
         });
-        res.status(200).json(response);
     } catch (error) {
-        res.status(500).json({ msg: error.message });
+        return bad(res, 'Gagal mengambil data user', 500);
     }
 };
 
-// GET user by ID (param id)
+// GET /users/:id
 export const getUserById = async (req, res) => {
     try {
-        const response = await User.findOne({
+        const u = await User.findOne({
             attributes: [
                 'id',
                 'full_name',
@@ -36,97 +82,145 @@ export const getUserById = async (req, res) => {
                 'nip',
                 'phone',
                 'status',
+                'role_id',
+                'createdAt',
+                'updatedAt',
             ],
-            include: { model: Role, attributes: ['name'] },
+            include: { model: Role, attributes: ['id', 'name'] },
             where: { id: req.params.id },
         });
-        if (!response)
-            return res.status(404).json({ msg: 'User tidak ditemukan' });
-        res.status(200).json(response);
+        if (!u) return bad(res, 'User tidak ditemukan', 404);
+        return ok(res, u, 'User fetched');
     } catch (error) {
-        res.status(500).json({ msg: error.message });
+        return bad(res, 'Gagal mengambil user', 500);
     }
 };
 
-// CREATE user
+// POST /users
 export const createUser = async (req, res) => {
-    const { full_name, username, phone, nip, password, confPassword, role_id } =
-        req.body;
-
-    if (password !== confPassword) {
-        return res
-            .status(400)
-            .json({ msg: 'Password & Konfirmasi tidak cocok' });
-    }
-
     try {
-        const hashPassword = await argon2.hash(password);
-        await User.create({
-            full_name,
-            username,
-            nip,
-            phone,
-            password_hash: hashPassword,
-            role_id,
-            status: 'active',
+        const { errors, values } = await validateCreatePayload(req.body);
+        if (errors && Object.keys(errors).length) return vErr(res, errors);
+
+        const hashPassword = await argon2.hash(values.password, {
+            type: argon2.argon2id,
         });
-        res.status(201).json({ msg: 'User berhasil dibuat' });
-    } catch (error) {
-        res.status(400).json({ msg: error.message });
-    }
-};
 
-// UPDATE user
-export const updateUser = async (req, res) => {
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
+        const createdSafe = await sequelize.transaction(async (t) => {
+            const u = await User.create(
+                {
+                    full_name: values.full_name,
+                    username: values.username,
+                    phone: values.phone,
+                    nip: values.nip,
+                    password_hash: hashPassword,
+                    role_id: values.role_id,
+                    status: values.status,
+                },
+                { transaction: t },
+            );
 
-    const {
-        full_name,
-        username,
-        nip,
-        phone,
-        password,
-        confPassword,
-        role_id,
-        status,
-    } = req.body;
+            return {
+                id: u.id,
+                full_name: u.full_name,
+                username: u.username,
+                phone: u.phone,
+                nip: u.nip,
+                role_id: u.role_id,
+                status: u.status,
+                createdAt: u.createdAt,
+                updatedAt: u.updatedAt,
+            };
+        });
 
-    let hashPassword = user.password_hash;
-    if (password && password !== '') {
-        if (password !== confPassword) {
-            return res
-                .status(400)
-                .json({ msg: 'Password & Konfirmasi tidak cocok' });
+        return ok(res, createdSafe, 'User berhasil dibuat', 201);
+    } catch (err) {
+        if (err?.name === 'SequelizeUniqueConstraintError') {
+            // Sequelize-level unique (backup)
+            const errs = {};
+            for (const e of err?.errors || [])
+                errs[e.path] = e.message || 'Tidak valid';
+            return bad(res, 'Duplikasi data', 409, errs);
         }
-        hashPassword = await argon2.hash(password);
-    }
-
-    try {
-        await user.update({
-            full_name,
-            username,
-            phone,
-            nip,
-            password_hash: hashPassword,
-            role_id,
-            status,
-        });
-        res.status(200).json({ msg: 'User berhasil diperbarui' });
-    } catch (error) {
-        res.status(400).json({ msg: error.message });
+        if (err?.name === 'SequelizeValidationError') {
+            const errs = {};
+            for (const e of err?.errors || [])
+                errs[e.path] = e.message || 'Tidak valid';
+            return vErr(res, errs);
+        }
+        return bad(res, err?.message || 'Gagal membuat user', 400);
     }
 };
 
-// DELETE user
-export const deleteUser = async (req, res) => {
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
-
+// PUT /users/:id
+export const updateUser = async (req, res) => {
     try {
+        const user = await User.findByPk(req.params.id);
+        if (!user) return bad(res, 'User tidak ditemukan', 404);
+
+        const { errors, values } = await validateUpdatePayload(
+            req.body,
+            user.id,
+        );
+        if (errors && Object.keys(errors).length) return vErr(res, errors);
+
+        let hashPassword = user.password_hash;
+        if (values.password) {
+            hashPassword = await argon2.hash(values.password, {
+                type: argon2.argon2id,
+            });
+        }
+
+        await user.update({
+            ...(values.full_name !== null
+                ? { full_name: values.full_name }
+                : {}),
+            ...(values.username !== null ? { username: values.username } : {}),
+            ...(values.phone !== null ? { phone: values.phone } : {}),
+            ...(values.nip !== null ? { nip: values.nip } : {}),
+            ...(values.role_id ? { role_id: values.role_id } : {}),
+            ...(values.status ? { status: values.status } : {}),
+            password_hash: hashPassword,
+        });
+
+        const safe = {
+            id: user.id,
+            full_name: user.full_name,
+            username: user.username,
+            phone: user.phone,
+            nip: user.nip,
+            role_id: user.role_id,
+            status: user.status,
+            updatedAt: user.updatedAt,
+        };
+
+        return ok(res, safe, 'User berhasil diperbarui', 200);
+    } catch (err) {
+        if (err?.name === 'SequelizeUniqueConstraintError') {
+            const errs = {};
+            for (const e of err?.errors || [])
+                errs[e.path] = e.message || 'Tidak valid';
+            return bad(res, 'Duplikasi data', 409, errs);
+        }
+        if (err?.name === 'SequelizeValidationError') {
+            const errs = {};
+            for (const e of err?.errors || [])
+                errs[e.path] = e.message || 'Tidak valid';
+            return vErr(res, errs);
+        }
+        return bad(res, err?.message || 'Gagal memperbarui user', 400);
+    }
+};
+
+// DELETE /users/:id
+export const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.params.id);
+        if (!user) return bad(res, 'User tidak ditemukan', 404);
+
         await user.destroy();
-        res.status(200).json({ msg: 'User berhasil dihapus' });
+        return ok(res, { id: req.params.id }, 'User berhasil dihapus', 200);
     } catch (error) {
-        res.status(400).json({ msg: error.message });
+        return bad(res, error?.message || 'Gagal menghapus user', 400);
     }
 };

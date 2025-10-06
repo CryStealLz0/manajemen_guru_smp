@@ -7,15 +7,60 @@ import {
     updateUser,
     deleteUser,
 } from '../controllers/Users.js';
-import { requireAuth, requireRole } from '../middleware/Auth.js';
+import {
+    requireAuth,
+    requireRole,
+    ensureActiveUser,
+} from '../middleware/Middleware.js';
+import { validateBody } from '../middleware/ValidateBody.js';
+
+import {
+    CreateUserSchema,
+    UpdateUserSchema,
+} from '../validators/userSchemas.js';
 
 const router = express.Router();
 
-// Semua route user hanya boleh diakses admin
-router.get('/', requireAuth, requireRole('admin'), getUsers);
-router.get('/:id', requireAuth, requireRole('admin'), getUserById);
-router.post('/', requireAuth, requireRole('admin'), createUser);
-router.put('/:id', requireAuth, requireRole('admin'), updateUser);
-router.delete('/:id', requireAuth, requireRole('admin'), deleteUser);
+router.get(
+    '/',
+    requireAuth,
+    ensureActiveUser,
+    requireRole(['admin']),
+    getUsers,
+);
+
+router.get(
+    '/:id',
+    requireAuth,
+    ensureActiveUser,
+    requireRole(['admin']),
+    getUserById,
+);
+
+router.post(
+    '/',
+    requireAuth,
+    ensureActiveUser,
+    requireRole(['admin']),
+    validateBody(CreateUserSchema),
+    createUser, // controller masih cek async: role exist, unique, dll.
+);
+
+router.put(
+    '/:id',
+    requireAuth,
+    ensureActiveUser,
+    requireRole(['admin']), // atau requireSelfOrRole('id', ['admin'])
+    validateBody(UpdateUserSchema),
+    updateUser,
+);
+
+router.delete(
+    '/:id',
+    requireAuth,
+    ensureActiveUser,
+    requireRole(['admin']),
+    deleteUser,
+);
 
 export default router;

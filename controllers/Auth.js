@@ -1,61 +1,173 @@
 import argon2 from 'argon2';
 import User from '../models/User.js';
 import Role from '../models/Role.js';
+import { z } from 'zod';
+
+// Helper respons
+const ok = (res, data, msg = 'OK', code = 200) =>
+    res.status(code).json({ ok: true, msg, ...data });
+const fail = (res, code, msg, errors) =>
+    res.status(code).json({ ok: false, msg, ...(errors ? { errors } : {}) });
+
+const norm = (v) => String(v ?? '').trim();
+
+const ARGON2_OPTS = {
+    type: argon2.argon2id,
+    timeCost: 3, // naikkan perlahan jika server kuat
+    memoryCost: 1 << 15, // 32 MB
+    parallelism: 1,
+};
+
+let DUMMY_HASH;
+async function getDummyHash(argon2, opts) {
+    if (!DUMMY_HASH) {
+        DUMMY_HASH = await argon2.hash('not-a-real-password', opts);
+    }
+    return DUMMY_HASH;
+}
+
+const LoginSchema = z.object({
+    username: z.string().min(1, 'Username wajib diisi'),
+    password: z.string().min(1, 'Password wajib diisi'),
+});
 
 // POST /auth/login
 export const login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        // Validasi awal
+        const parsed = LoginSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return fail(
+                res,
+                422,
+                'Validasi gagal',
+                parsed.error.flatten().fieldErrors,
+            );
+        }
+        const { username, password } = parsed.data;
 
-        // cari user + role
+        // Ambil user + role
         const user = await User.findOne({
             where: { username },
-            include: { model: Role, attributes: ['name'] },
+            attributes: [
+                'id',
+                'full_name',
+                'username',
+                'password_hash',
+                'status',
+                'role_id',
+            ],
+            include: { model: Role, attributes: ['id', 'name'] },
         });
-        if (!user)
-            return res
-                .status(401)
-                .json({ msg: 'Username atau password salah' });
 
-        // verifikasi password
-        const ok = await argon2.verify(user.password_hash, password || '');
-        if (!ok)
-            return res
-                .status(401)
-                .json({ msg: 'Username atau password salah' });
+        // Pesan disamakan untuk prevent user enumeration
+        const badCred = () => fail(res, 401, 'Username atau password salah');
 
-        if (user.status !== 'active') {
-            return res.status(403).json({ msg: 'Akun tidak aktif' });
+        if (!user || !user.password_hash) {
+            // verifikasi dummy untuk samakan waktu komputasi
+            try {
+                await argon2.verify(
+                    await getDummyHash(argon2, ARGON2_OPTS),
+                    password,
+                );
+            } catch {}
+            return badCred();
         }
 
-        // simpan data minimal ke session
+        // Verifikasi password
+        const isOk = await argon2.verify(user.password_hash, password);
+        if (!isOk) return badCred();
+
+        // Opsional: rehash jika parameter berubah (meningkatkan keamanan seiring waktu)
+        const needsRehash = await argon2.needsRehash?.(
+            user.password_hash,
+            ARGON2_OPTS,
+        );
+        if (needsRehash) {
+            try {
+                const needsRehash = await argon2.needsRehash?.(
+                    user.password_hash,
+                    ARGON2_OPTS,
+                );
+                if (needsRehash) {
+                    const newHash = await argon2.hash(password, ARGON2_OPTS);
+                    await user.update({ password_hash: newHash });
+                }
+            } catch {
+                // abaikan diam-diam; login tetap lanjut
+            }
+        }
+
+        // Status akun
+        if (user.status === 'banned') return fail(res, 403, 'Akun diblokir');
+        if (user.status !== 'active') return fail(res, 403, 'Akun tidak aktif');
+
+        // Regenerate session (mitigasi session fixation)
+        await new Promise((resolve, reject) =>
+            req.session.regenerate((err) => (err ? reject(err) : resolve())),
+        );
+
+        // Simpan data minimal di session
         req.session.user = {
             id: user.id,
             full_name: user.full_name,
             username: user.username,
-            role: user.role?.name || 'teacher', // default fallback
+            role_id: user.role_id,
+            role: user.role?.name ?? null,
+            status: user.status,
         };
 
-        res.json({ msg: 'Login berhasil', user: req.session.user });
+        // (Opsional) set maxAge dinamis di middleware session, bukan di sini
+        return ok(res, { user: req.session.user }, 'Login berhasil');
     } catch (err) {
-        res.status(500).json({ msg: err.message });
+        return fail(res, 500, err?.message || 'Gagal login');
     }
 };
 
 // GET /auth/me
+// Selalu 200; kalau belum login -> user:null
 export const me = async (req, res) => {
-    if (!req.session?.user) {
-        return res.status(401).json({ msg: 'Belum login' });
+    try {
+        if (!req.session?.user) {
+            return ok(res, { user: null }, 'OK');
+        }
+        // Re-hydrate role terbaru agar perubahan role langsung tercermin
+        const dbUser = await User.findByPk(req.session.user.id, {
+            attributes: ['id', 'full_name', 'username', 'status', 'role_id'],
+            include: { model: Role, attributes: ['id', 'name'] },
+        });
+        if (!dbUser) {
+            // session usang — bersihkan
+            req.session.user = null;
+            return ok(res, { user: null }, 'OK');
+        }
+        // Update session minimal
+        req.session.user = {
+            id: dbUser.id,
+            full_name: dbUser.full_name,
+            username: dbUser.username,
+            role_id: dbUser.role_id,
+            role: dbUser.role?.name ?? null,
+            status: dbUser.status,
+        };
+        return ok(res, { user: req.session.user }, 'OK');
+    } catch (err) {
+        return fail(res, 500, err?.message || 'Gagal mengambil sesi');
     }
-    res.json({ user: req.session.user });
 };
 
 // POST /auth/logout
 export const logout = (req, res) => {
-    if (!req.session) return res.json({ msg: 'Sudah logout' });
+    if (!req.session) return ok(res, {}, 'Sudah logout');
     req.session.destroy((err) => {
-        if (err) return res.status(500).json({ msg: 'Gagal logout' });
-        res.clearCookie('connect.sid'); // opsional
-        res.json({ msg: 'Logout berhasil' });
+        if (err) return fail(res, 500, 'Gagal logout');
+        // Pastikan nama cookie sesuai setingan express-session kamu
+        res.clearCookie('sid', {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: false,
+            path: '/',
+        });
+        return ok(res, {}, 'Logout berhasil');
     });
 };

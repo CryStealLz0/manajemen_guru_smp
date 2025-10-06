@@ -4,7 +4,9 @@
     "type": "module",
     "main": "index.js",
     "scripts": {
-        "dev": "nodemon app.js"
+        "dev": "nodemon server.js",
+        "seed:admin": "node seed-admin.js",
+        "seed:admin:reset": "node seed-admin.js --force-reset-pass"
     },
     "author": "",
     "license": "ISC",
@@ -18,8 +20,10 @@
         "cors": "^2.8.5",
         "dotenv": "^17.2.1",
         "express": "^5.1.0",
+        "express-rate-limit": "^8.1.0",
         "express-session": "^1.18.2",
         "mysql2": "^3.14.4",
-        "sequelize": "^6.37.7"
+        "sequelize": "^6.37.7",
+        "zod": "^4.1.11"
     }
 }

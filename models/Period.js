@@ -8,7 +8,7 @@ const Period = db.define(
             autoIncrement: true,
             primaryKey: true,
         },
-        title: { type: DataTypes.STRING(32), allowNull: false }, // 'JP-1'
+        title: { type: DataTypes.STRING(32), allowNull: false },
         start_time: { type: DataTypes.TIME, allowNull: false },
         end_time: { type: DataTypes.TIME, allowNull: false },
     },
