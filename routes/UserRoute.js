@@ -11,6 +11,7 @@ import {
     requireAuth,
     requireRole,
     ensureActiveUser,
+    requireSelfOrRole,
 } from '../middleware/Middleware.js';
 import { validateBody } from '../middleware/ValidateBody.js';
 
@@ -33,7 +34,7 @@ router.get(
     '/:id',
     requireAuth,
     ensureActiveUser,
-    requireRole(['admin']),
+    requireSelfOrRole('id', ['admin']),
     getUserById,
 );
 
@@ -50,7 +51,7 @@ router.put(
     '/:id',
     requireAuth,
     ensureActiveUser,
-    requireRole(['admin']), // atau requireSelfOrRole('id', ['admin'])
+    requireSelfOrRole('id', ['admin']),
     validateBody(UpdateUserSchema),
     updateUser,
 );
