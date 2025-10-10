@@ -34,7 +34,7 @@ const LoginSchema = z.object({
 // POST /auth/login
 export const login = async (req, res) => {
     try {
-        // Validasi awal
+        // Validasi input awal
         const parsed = LoginSchema.safeParse(req.body);
         if (!parsed.success) {
             return fail(
@@ -60,54 +60,67 @@ export const login = async (req, res) => {
             include: { model: Role, attributes: ['id', 'name'] },
         });
 
-        // Pesan disamakan untuk prevent user enumeration
+        // Pesan umum (untuk keamanan)
         const badCred = () => fail(res, 401, 'Username atau password salah');
 
+        // Jika user tidak ditemukan → kirim error spesifik tapi tetap aman
         if (!user || !user.password_hash) {
-            // verifikasi dummy untuk samakan waktu komputasi
+            // verifikasi dummy agar waktu respon tetap seragam
             try {
                 await argon2.verify(
                     await getDummyHash(argon2, ARGON2_OPTS),
                     password,
                 );
             } catch {}
-            return badCred();
+
+            // kembalikan error yang bisa dibaca frontend
+            return fail(res, 401, 'Username tidak terdaftar', {
+                username: 'Username tidak terdaftar',
+            });
+        }
+
+        if (password.length <= 6) {
+            return fail(
+                res,
+                400,
+                'Password tidak boleh kurang dari 6 karakter',
+                {
+                    password: 'Password tidak boleh kurang dari 6 karakter',
+                },
+            );
         }
 
         // Verifikasi password
         const isOk = await argon2.verify(user.password_hash, password);
-        if (!isOk) return badCred();
+        if (!isOk)
+            return fail(res, 401, 'Password salah', {
+                password: 'Password salah',
+            });
 
-        // Opsional: rehash jika parameter berubah (meningkatkan keamanan seiring waktu)
+        // Rehash jika parameter berubah (opsional)
         const needsRehash = await argon2.needsRehash?.(
             user.password_hash,
             ARGON2_OPTS,
         );
         if (needsRehash) {
             try {
-                const needsRehash = await argon2.needsRehash?.(
-                    user.password_hash,
-                    ARGON2_OPTS,
-                );
-                if (needsRehash) {
-                    const newHash = await argon2.hash(password, ARGON2_OPTS);
-                    await user.update({ password_hash: newHash });
-                }
+                const newHash = await argon2.hash(password, ARGON2_OPTS);
+                await user.update({ password_hash: newHash });
             } catch {
-                // abaikan diam-diam; login tetap lanjut
+                // abaikan error rehash
             }
         }
 
-        // Status akun
+        // Cek status akun
         if (user.status === 'banned') return fail(res, 403, 'Akun diblokir');
         if (user.status !== 'active') return fail(res, 403, 'Akun tidak aktif');
 
-        // Regenerate session (mitigasi session fixation)
+        // Regenerate session untuk keamanan
         await new Promise((resolve, reject) =>
             req.session.regenerate((err) => (err ? reject(err) : resolve())),
         );
 
-        // Simpan data minimal di session
+        // Simpan data user minimal di session
         req.session.user = {
             id: user.id,
             full_name: user.full_name,
@@ -117,7 +130,6 @@ export const login = async (req, res) => {
             status: user.status,
         };
 
-        // (Opsional) set maxAge dinamis di middleware session, bukan di sini
         return ok(res, { user: req.session.user }, 'Login berhasil');
     } catch (err) {
         return fail(res, 500, err?.message || 'Gagal login');
