@@ -10,6 +10,7 @@ const PORT = process.env.APP_PORT || 5000;
         await db.authenticate();
 
         // kalau ada model lain & perlu, boleh:
+        // buat generate database
         // await db.sync();
 
         console.log('[BOOT] Sync session table...');

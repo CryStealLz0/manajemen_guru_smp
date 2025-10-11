@@ -24,7 +24,7 @@ Jalankan perintah berikut di terminal untuk meng-install semua package yang dibu
 
 ## 🧱 3. Aktifkan Bootstrapping Database
 
-- Buka file utama app.js.
+- Buka file utama server.js.
 - Pastikan **kode untuk bootstrapping database** tidak dikomentari.
 - Biasanya berupa pemanggilan fungsi `db.sync()`.
 
@@ -52,7 +52,8 @@ Setelah role tersedia, jalankan perintah berikut di terminal: node seed-admin.js
 Untuk pengujian endpoint secara langsung dari editor:
 
 1. Install extension **REST Client** di VS Code (jika belum terpasang).
-2. Gunakan file berikut sebagai contoh:
+2. Gunakan file berikut sebagai contoh: request.rest 
+3. Atau bisa gunakan link postman yang telah di berikan
 
 ---
 
@@ -70,5 +71,8 @@ Setelah semua langkah di atas dilakukan, server siap dijalankan dan diuji
 ### .env saat ini masih berupa ini
 APP_PORT = example 5000
 SESS_SECRET = sring acak seterah wkwkwk
+
+SEED_ADMIN_USERNAME=admin (example)
+SEED_ADMIN_PASSWORD=admin123 (example)
 
 dan ini masih baru coba fitur login blm buat yang lainnya.
