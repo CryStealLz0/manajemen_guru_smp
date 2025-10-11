@@ -6,8 +6,11 @@ Panduan lengkap untuk menjalankan proyek ini di lingkungan lokal.
 
 ## 🔧 1. Install Dependencies
 
-Jalankan perintah berikut di terminal untuk meng-install semua package yang dibutuhkan: npm install
+Jalankan perintah berikut di terminal untuk meng-install semua package yang dibutuhkan: 
 
+```bash
+npm install
+```
 ---
 
 ## 🛠️ 2. Konfigurasi Database
@@ -43,7 +46,10 @@ Tambahkan data berikut secara manual ke tabel `Roles` di database kamu:
 
 ## 👤 5. Seed Admin User
 
-Setelah role tersedia, jalankan perintah berikut di terminal: node seed-admin.js
+Setelah role tersedia, jalankan perintah berikut di terminal: 
+```bash
+node seed-admin.js
+```
 
 ---
 
