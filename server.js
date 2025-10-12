@@ -1,5 +1,6 @@
 // server.js
 import { app, db, store } from './app.js';
+import './models/index.js';
 
 const PORT = process.env.APP_PORT || 5000;
 
@@ -11,7 +12,7 @@ const PORT = process.env.APP_PORT || 5000;
 
         // kalau ada model lain & perlu, boleh:
         // buat generate database
-        // await db.sync();
+        await db.sync();
 
         console.log('[BOOT] Sync session table...');
         await store.sync(); // penting: tunggu sampai tabel sessions siap

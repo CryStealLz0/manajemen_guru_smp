@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const db = new Sequelize(
-    process.env.DB_NAME || 'db_manajemen_guru_smp',
+    process.env.DB_NAME || 'db_tugas_qa',
     process.env.DB_USER || 'root',
     process.env.DB_PASS || '',
     {

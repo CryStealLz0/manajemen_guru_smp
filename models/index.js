@@ -1,6 +1,6 @@
+// models/index.js
 import db from '../config/Database.js';
 
-// Import models so side-effect association code runs:
 import Role from './Role.js';
 import User from './User.js';
 import Subject from './Subject.js';
@@ -14,16 +14,16 @@ import ClassSubject from './ClassSubject.js';
 import Timetable from './Timetable.js';
 
 export {
-    db,
-    Role,
-    User,
-    Subject,
-    Class,
-    Room,
-    AcademicYear,
-    Semester,
-    Period,
-    TeacherSubject,
-    ClassSubject,
-    Timetable,
+  db,
+  Role,
+  User,
+  Subject,
+  Class,
+  Room,
+  AcademicYear,
+  Semester,
+  Period,
+  TeacherSubject,
+  ClassSubject,
+  Timetable,
 };
