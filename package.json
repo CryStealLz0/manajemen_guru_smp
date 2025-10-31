@@ -1,29 +1,39 @@
 {
-    "name": "backend",
-    "version": "1.0.0",
-    "type": "module",
-    "main": "index.js",
-    "scripts": {
-        "dev": "nodemon server.js",
-        "seed:admin": "node seed-admin.js",
-        "seed:admin:reset": "node seed-admin.js --force-reset-pass"
-    },
-    "author": "",
-    "license": "ISC",
-    "description": "",
-    "devDependencies": {
-        "nodemon": "^3.1.10"
-    },
-    "dependencies": {
-        "argon2": "^0.44.0",
-        "connect-session-sequelize": "^8.0.2",
-        "cors": "^2.8.5",
-        "dotenv": "^17.2.1",
-        "express": "^5.1.0",
-        "express-rate-limit": "^8.1.0",
-        "express-session": "^1.18.2",
-        "mysql2": "^3.14.4",
-        "sequelize": "^6.37.7",
-        "zod": "^4.1.11"
-    }
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "seed:admin": "node seed-admin.js",
+    "seed:teacher": "node seed-teacher.js",
+    "seed:te": "node seeds-example/seed-teachers.js",
+    "seed:a-y": "node seeds-example/seed-academic-years.js",
+    "seed:su": "node seeds-example/seed-subjects.js",
+    "seed:se": "node seeds-example/seed-semesters.js",
+    "seed:cl": "node seeds-example/seed-classes.js",
+    "seed:pe": "node seeds-example/seed-periods.js",
+    "seed:ro": "node seeds-example/seed-rooms.js",
+    "seed:c-s": "node seeds-example/seed-class-subjects.js",
+    "seed:t-s": "node seeds-example/seed-teacher-subjects.js",
+    "seed:ti": "node seeds-example/seed-timetables.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "connect-session-sequelize": "^8.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "mysql2": "^3.14.4",
+    "sequelize": "^6.37.7",
+    "zod": "^4.1.11"
+  }
 }
