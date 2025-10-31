@@ -1,15 +1,15 @@
 // seed-timetables.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import Timetable from '../models/Timetable.js';
-import Class from '../models/Class.js';
-import Semester from '../models/Semester.js';
-import Period from '../models/Period.js';
-import Subject from '../models/Subject.js';
-import User from '../models/User.js';
-import Room from '../models/Room.js';
-import TeacherSubject from '../models/TeacherSubject.js';
-import ClassSubject from '../models/ClassSubject.js';
+import { db } from '../../models/index.js';
+import Timetable from '../../models/Timetable.js';
+import Class from '../../models/Class.js';
+import Semester from '../../models/Semester.js';
+import Period from '../../models/Period.js';
+import Subject from '../../models/Subject.js';
+import User from '../../models/User.js';
+import Room from '../../models/Room.js';
+import TeacherSubject from '../../models/TeacherSubject.js';
+import ClassSubject from '../../models/ClassSubject.js';
 
 (async () => {
   const tx = await db.transaction();

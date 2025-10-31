@@ -1,9 +1,9 @@
 // seed-classes.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import Class from '../models/Class.js';
-import User from '../models/User.js';
-import Role from '../models/Role.js';
+import { db } from '../../models/index.js';
+import Class from '../../models/Class.js';
+import User from '../../models/User.js';
+import Role from '../../models/Role.js';
 
 (async () => {
   const tx = await db.transaction();

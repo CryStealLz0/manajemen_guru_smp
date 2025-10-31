@@ -1,10 +1,10 @@
 // seed-teacher-subjects.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import TeacherSubject from '../models/TeacherSubject.js';
-import User from '../models/User.js';
-import Role from '../models/Role.js';
-import Subject from '../models/Subject.js';
+import { db } from '../../models/index.js';
+import TeacherSubject from '../../models/TeacherSubject.js';
+import User from '../../models/User.js';
+import Role from '../../models/Role.js';
+import Subject from '../../models/Subject.js';
 
 (async () => {
   const tx = await db.transaction();

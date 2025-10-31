@@ -1,9 +1,9 @@
 // seed-class-subjects.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import Class from '../models/Class.js';
-import Subject from '../models/Subject.js';
-import ClassSubject from '../models/ClassSubject.js';
+import { db } from '../../models/index.js';
+import Class from '../../models/Class.js';
+import Subject from '../../models/Subject.js';
+import ClassSubject from '../../models/ClassSubject.js';
 
 (async () => {
   const tx = await db.transaction();

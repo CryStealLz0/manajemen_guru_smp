@@ -1,9 +1,9 @@
 // seeds/seed-example-teacher.js
 import 'dotenv/config.js';
 import argon2 from 'argon2';
-import { db } from '../models/index.js';
-import Role from '../models/Role.js';
-import User from '../models/User.js';
+import { db } from '../../models/index.js';
+import Role from '../../models/Role.js';
+import User from '../../models/User.js';
 
 (async () => {
   const tx = await db.transaction();

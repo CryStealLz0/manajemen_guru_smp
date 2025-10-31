@@ -1,8 +1,8 @@
 // seed-subjects.js
 import 'dotenv/config.js';
 import argon2 from 'argon2';
-import { db } from '../models/index.js';
-import Subject from '../models/Subject.js';
+import { db } from '../../models/index.js';
+import Subject from '../../models/Subject.js';
 
 (async () => {
   const tx = await db.transaction();

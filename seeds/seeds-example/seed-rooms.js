@@ -1,7 +1,7 @@
 // seed-rooms.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import Room from '../models/Room.js';
+import { db } from '../../models/index.js';
+import Room from '../../models/Room.js';
 
 (async () => {
   const tx = await db.transaction();

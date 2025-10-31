@@ -1,7 +1,7 @@
 // seed-periods.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import Period from '../models/Period.js';
+import { db } from '../../models/index.js';
+import Period from '../../models/Period.js';
 
 (async () => {
   const tx = await db.transaction();

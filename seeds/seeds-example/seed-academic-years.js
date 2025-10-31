@@ -1,7 +1,7 @@
 // seed-example-academic-years.js
 import 'dotenv/config.js';
-import { db } from '../models/index.js';
-import AcademicYear from '../models/AcademicYear.js';
+import { db } from '../../models/index.js';
+import AcademicYear from '../../models/AcademicYear.js';
 
 (async () => {
   const tx = await db.transaction();
