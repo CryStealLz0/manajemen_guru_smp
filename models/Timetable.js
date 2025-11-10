@@ -22,23 +22,13 @@ const Timetable = db.define(
         teacher_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
         room_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
         notes: { type: DataTypes.TEXT, allowNull: true },
-        created_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: literal('CURRENT_TIMESTAMP'),
-        },
-        updated_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: literal(
-                'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-            ),
-        },
     },
     {
         freezeTableName: true,
         underscored: true,
-        timestamps: false,
+        timestamps: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
         indexes: [
             {
                 unique: true,

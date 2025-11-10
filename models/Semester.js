@@ -16,23 +16,13 @@ const Semester = db.define(
         name: { type: DataTypes.STRING(32), allowNull: false }, // 'Ganjil' / 'Genap'
         start_date: { type: DataTypes.DATEONLY, allowNull: false },
         end_date: { type: DataTypes.DATEONLY, allowNull: false },
-        created_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: literal('CURRENT_TIMESTAMP'),
-        },
-        updated_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: literal(
-                'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-            ),
-        },
     },
     {
         freezeTableName: true,
         underscored: true,
-        timestamps: false,
+        timestamps: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
         indexes: [{ unique: true, fields: ['academic_year_id', 'name'] }],
     },
 );

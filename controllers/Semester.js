@@ -68,6 +68,7 @@ export async function getSemesterById(req, res) {
 
 /* POST /semesters */
 export async function createSemester(req, res) {
+  console.log('Create semester request body:', req.body);
   try {
     const academic_year_id = Number(req.body?.academic_year_id);
     const name = normalizeName(req.body?.name);

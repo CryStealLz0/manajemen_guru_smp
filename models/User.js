@@ -33,23 +33,13 @@ const User = db.define(
             allowNull: false,
             defaultValue: 'active',
         },
-        created_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: literal('CURRENT_TIMESTAMP'),
-        },
-        updated_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: literal(
-                'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-            ),
-        },
     },
     {
         freezeTableName: true,
         underscored: true,
         timestamps: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
     },
 );
 

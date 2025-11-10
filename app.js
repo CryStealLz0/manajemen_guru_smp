@@ -66,6 +66,7 @@ import roomRoutes from './routes/RoomRoute.js';
 import classSubjectRoutes from './routes/ClassSubjectRoute.js';
 import teacherSubjectRoutes from './routes/TeacherSubjectRoute.js';
 import timetableRoutes from './routes/TimetableRoute.js';
+import periodRoutes from './routes/PeriodRoute.js';
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
@@ -75,6 +76,7 @@ app.use('/academic-years', academicYearRoutes);
 app.use('/semesters', semesterRoutes);
 app.use('/classes', classRoutes);
 app.use('/rooms', roomRoutes);
+app.use('/periods', periodRoutes);
 
 // Subject Relations
 app.use('/class-subjects', classSubjectRoutes);

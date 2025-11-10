@@ -1,4 +1,4 @@
-import sequelize from '../config/Database.js';
+import sequelize, { Op } from '../config/Database.js';
 import User from '../models/User.js';
 import Role from '../models/Role.js';
 import argon2 from 'argon2';
@@ -21,8 +21,8 @@ export const getUsers = async (req, res) => {
         const q = (req.query.q ?? '').trim() || null;
         const status = (req.query.status ?? '').trim() || null;
         const role_id = req.query.role_id ? Number(req.query.role_id) : null;
+        const role_name = (req.query.role ?? '').trim() || null;
 
-        const { Op } = await import('sequelize');
         const where = {};
         if (q) {
             // Gunakan operator yang cocok dengan dialect DB-mu:
@@ -39,6 +39,17 @@ export const getUsers = async (req, res) => {
         if (status) where.status = status;
         if (role_id) where.role_id = role_id;
 
+        if (role_name) {
+            const role = await Role.findOne({ where: { name: role_name } });
+            if (role) {
+                where.role_id = role.id;
+            } else {
+                return ok(res, [], 'Users fetched', 200, {
+                    meta: { page, limit, total: 0, pages: 0 },
+                });
+            }
+        }
+
         const { rows, count } = await User.findAndCountAll({
             where,
             attributes: [
@@ -49,8 +60,8 @@ export const getUsers = async (req, res) => {
                 'phone',
                 'status',
                 'role_id',
-                'createdAt',
-                'updatedAt',
+                'created_at',
+                'updated_at',
             ],
             include: { model: Role, attributes: ['id', 'name'] },
             order: [['id', 'ASC']],
@@ -83,8 +94,8 @@ export const getUserById = async (req, res) => {
                 'phone',
                 'status',
                 'role_id',
-                'createdAt',
-                'updatedAt',
+                'created_at',
+                'updated_at',
             ],
             include: { model: Role, attributes: ['id', 'name'] },
             where: { id: req.params.id },
@@ -128,8 +139,8 @@ export const createUser = async (req, res) => {
                 nip: u.nip,
                 role_id: u.role_id,
                 status: u.status,
-                createdAt: u.createdAt,
-                updatedAt: u.updatedAt,
+                created_at: u.created_at,
+                updated_at: u.updated_at,
             };
         });
 
@@ -191,7 +202,8 @@ export const updateUser = async (req, res) => {
             nip: user.nip,
             role_id: user.role_id,
             status: user.status,
-            updatedAt: user.updatedAt,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
         };
 
         return ok(res, safe, 'User berhasil diperbarui', 200);
