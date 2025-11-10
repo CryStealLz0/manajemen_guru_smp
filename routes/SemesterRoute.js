@@ -20,8 +20,8 @@ const router = express.Router();
 router.use(requireAuth, ensureActiveUser);
 
 // Hanya admin yang boleh kelola semesters
-router.get('/', requireRole('admin'), getSemesters); // ?academic_year_id=...
-router.get('/:id', requireRole('admin'), getSemesterById);
+router.get('/', getSemesters); // ?academic_year_id=...
+router.get('/:id', getSemesterById);
 router.post('/', requireRole('admin'), createSemester);
 router.put('/:id', requireRole('admin'), updateSemester);
 router.delete('/:id', requireRole('admin'), deleteSemester);

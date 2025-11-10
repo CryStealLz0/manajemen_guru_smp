@@ -19,8 +19,8 @@ const router = express.Router();
 router.use(requireAuth, ensureActiveUser);
 
 // Hanya admin yang boleh kelola data jam pelajaran
-router.get('/', requireRole('admin'), getPeriods);
-router.get('/:id', requireRole('admin'), getPeriodById);
+router.get('/', getPeriods);
+router.get('/:id', getPeriodById);
 router.post('/', requireRole('admin'), createPeriod);
 router.put('/:id', requireRole('admin'), updatePeriod);
 router.delete('/:id', requireRole('admin'), deletePeriod);

@@ -20,8 +20,8 @@ const router = express.Router();
 router.use(requireAuth, ensureActiveUser);
 
 // Hanya admin yang boleh mengelola data mata pelajaran
-router.get('/', requireRole('admin'), getSubjects);
-router.get('/:id', requireRole('admin'), getSubjectById);
+router.get('/', getSubjects);
+router.get('/:id', getSubjectById);
 router.post('/', requireRole('admin'), createSubject);
 router.put('/:id', requireRole('admin'), updateSubject);
 router.delete('/:id', requireRole('admin'), deleteSubject);

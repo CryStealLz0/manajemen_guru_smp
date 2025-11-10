@@ -19,8 +19,8 @@ const router = express.Router();
 router.use(requireAuth, ensureActiveUser);
 
 // Hanya admin yang boleh mengelola data ruangan
-router.get('/', requireRole('admin'), getRooms);
-router.get('/:id', requireRole('admin'), getRoomById);
+router.get('/', getRooms);
+router.get('/:id', getRoomById);
 router.post('/', requireRole('admin'), createRoom);
 router.put('/:id', requireRole('admin'), updateRoom);
 router.delete('/:id', requireRole('admin'), deleteRoom);

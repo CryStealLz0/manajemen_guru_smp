@@ -31,7 +31,7 @@ router.get('/', requireRole('admin'), getTeacherSubjects);
  */
 router.get(
   '/teachers/:teacher_id/subjects',
-  requireRole('admin'),
+
   getSubjectsByTeacher,
 );
 
@@ -41,7 +41,7 @@ router.get(
  */
 router.get(
   '/subjects/:subject_id/teachers',
-  requireRole('admin'),
+
   getTeachersBySubject,
 );
 

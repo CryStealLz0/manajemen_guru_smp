@@ -23,7 +23,7 @@ router.use(requireAuth, ensureActiveUser);
  * Mapping pivot (opsional filter: ?class_id=&subject_id=)
  * Contoh: GET /api/class-subjects?class_id=1
  */
-router.get('/', requireRole('admin'), getClassSubjects);
+router.get('/', getClassSubjects);
 
 /**
  * Ambil semua subject milik suatu kelas
@@ -31,7 +31,7 @@ router.get('/', requireRole('admin'), getClassSubjects);
  */
 router.get(
   '/classes/:class_id/subjects',
-  requireRole('admin'),
+
   getSubjectsByClass,
 );
 
@@ -41,7 +41,7 @@ router.get(
  */
 router.get(
   '/subjects/:subject_id/classes',
-  requireRole('admin'),
+
   getClassesBySubject,
 );
 

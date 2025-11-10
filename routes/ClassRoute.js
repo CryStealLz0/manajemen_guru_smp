@@ -19,8 +19,8 @@ const router = express.Router();
 router.use(requireAuth, ensureActiveUser);
 
 // Hanya admin yang boleh kelola data kelas
-router.get('/', requireRole('admin'), getClasses);
-router.get('/:id', requireRole('admin'), getClassById);
+router.get('/', getClasses);
+router.get('/:id', getClassById);
 router.post('/', requireRole('admin'), createClass);
 router.put('/:id', requireRole('admin'), updateClass);
 router.delete('/:id', requireRole('admin'), deleteClass);
